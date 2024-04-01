@@ -21,6 +21,7 @@ class UserRepositoryImpl implements UserRepository {
         data: {
           'email': email,
           'password': password,
+          'admin': true
         },
       );
 

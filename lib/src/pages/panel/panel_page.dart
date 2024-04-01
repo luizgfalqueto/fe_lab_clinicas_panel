@@ -1,15 +1,57 @@
 import 'package:fe_lab_clinicas_core/fe_lab_clinicas_core.dart';
+import 'package:fe_lab_clinicas_panel/src/models/panel_checkin_model.dart';
+import 'package:fe_lab_clinicas_panel/src/pages/panel/panel_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_getit/flutter_getit.dart';
+import 'package:signals_flutter/signals_flutter.dart';
 
 import 'widgets/panel_principal_widget.dart';
 import 'widgets/password_tile.dart';
 
-class PanelPage extends StatelessWidget {
+class PanelPage extends StatefulWidget {
   const PanelPage({super.key});
+
+  @override
+  State<PanelPage> createState() => _PanelPageState();
+}
+
+class _PanelPageState extends State<PanelPage> {
+  final controller = Injector.get<PanelController>();
+
+  @override
+  void initState() {
+    controller.listenerPanel();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     var sizeOf = MediaQuery.sizeOf(context);
+
+    final PanelCheckinModel? current;
+    final PanelCheckinModel? lastCall;
+    final List<PanelCheckinModel>? others;
+
+    final listPanel = controller.panelData.watch(context);
+
+    current = listPanel.firstOrNull;
+    if (listPanel.isNotEmpty) {
+      listPanel.removeAt(0);
+    }
+
+    lastCall = listPanel.firstOrNull;
+    if (listPanel.isNotEmpty) {
+      listPanel.removeAt(0);
+    }
+
+    others = listPanel;
+
     return Scaffold(
       appBar: LabClinicasAppBar(),
       body: SingleChildScrollView(
@@ -21,29 +63,33 @@ class PanelPage extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(
-                  width: sizeOf.width * .4,
-                  child: const PanelPrincipalWidget(
-                    label: 'Senha anterior',
-                    password: 'Luiz Gustavo',
-                    deskNumber: '03',
-                    labelColor: LabClinicasTheme.orangeColor,
-                    buttonColor: LabClinicasTheme.blueColor,
-                  ),
-                ),
+                lastCall != null
+                    ? SizedBox(
+                        width: sizeOf.width * .4,
+                        child: PanelPrincipalWidget(
+                          label: 'Senha anterior',
+                          password: lastCall.password,
+                          deskNumber: '0${lastCall.attendantDesk}',
+                          labelColor: LabClinicasTheme.orangeColor,
+                          buttonColor: LabClinicasTheme.blueColor,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
                 const SizedBox(
                   width: 20,
                 ),
-                SizedBox(
-                  width: sizeOf.width * .4,
-                  child: const PanelPrincipalWidget(
-                    label: 'Chamando senha',
-                    password: 'Luiz Gustavo',
-                    deskNumber: '03',
-                    labelColor: LabClinicasTheme.blueColor,
-                    buttonColor: LabClinicasTheme.orangeColor,
-                  ),
-                ),
+                current != null
+                    ? SizedBox(
+                        width: sizeOf.width * .4,
+                        child: PanelPrincipalWidget(
+                          label: 'Chamando senha',
+                          password: current.password,
+                          deskNumber: '0${current.attendantDesk}',
+                          labelColor: LabClinicasTheme.blueColor,
+                          buttonColor: LabClinicasTheme.orangeColor,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ],
             ),
             const SizedBox(
@@ -66,13 +112,16 @@ class PanelPage extends StatelessWidget {
             const SizedBox(
               height: 16,
             ),
-            const Wrap(
+            Wrap(
               runAlignment: WrapAlignment.center,
               spacing: 10,
               runSpacing: 10,
-              children: [
-                PasswordTile(),
-              ],
+              children: others
+                  .map((e) => PasswordTile(
+                        password: e.password,
+                        deskNumber: e.attendantDesk.toString(),
+                      ))
+                  .toList(),
             )
           ],
         ),
